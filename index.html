@@ -177,8 +177,7 @@
             object-fit: contain;
         }
         
-        .tab.active .tab-icon img {
-        }
+
         
         .tab-text {
             font-size: 14px;
@@ -243,10 +242,33 @@
             object-position: center;
             transition: transform var(--transition-speed) ease;
             will-change: transform;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform var(--transition-speed) ease;
+        }
+        
+        .thumbnail-image.loaded {
+            opacity: 1;
         }
         
         .thumbnail-container:hover .thumbnail-image {
             transform: scale(1.08);
+        }
+        
+        /* Loading placeholder */
+        .thumbnail-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
         
         /* Overlay */
@@ -612,27 +634,38 @@
 // Constants
 const MAX_IMAGES_TO_CHECK = 20;
 const IMAGES_PER_PERSON = 3;
+const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/jassde/websit/main/img/';
+const LOAD_DISTANCE = 100; // pixels from viewport to start loading
+const PLACEHOLDER_COLOR = '#2a2a2a';
 
-// Data by category
+// Data by category - Updated with correct filenames
 const categories = {
     celebrities: {
         name: "Celebs",
         icon: "monde.png",
         names: [
             "Abby Boom", "Abelina Sabrina", "Alanah Pearce", "Alexandra Daddario", "Alinty", 
-            "Amy Schumer", "Andrea Botez", "Anne Hathaway", "AriaSaki", "Ariel Winter", 
-            "Ashley Graham", "Azzyland", "Bella Poarch", "Bhadbhabie", "Billie Eilish", 
-            "Brett Cooper", "Brie Larson", "Brookeab", "Chappel roan", "Cinna", 
-            "Coco Austin", "Colleen Ballinger", "Dafne Keen", "Emilia Clarke", 
-            "Emily Ratajkowski", "Erin Moriarty", "Farrah Abraham", "Georgia Hirst", 
-            "Heyimbee", "Holly Hagan", "Iliza Shlesinger", "Jaclyn Glenn", 
-            "Jodi/QuarterJade", "Kallmekris", "Katerino", "Katheryn Winnick", 
-            "Kira Kosarin", "Kylie Jenner", "Lelepons", "Liz The Score Esport", 
-            "Mariah Carey", "Miesha Tate", "Miley Cyrus", "Millie Bobby Brown", 
-            "Olivia Rodrigo", "Paige VanZant", "Pokimane", "Qtcinderlla", 
-            "Sabrina Carpenter", "Sarah Silverman", "ShoeOnhead", "Sofia Vergara", 
-            "Sophia Diamond", "Susujpg", "Tana Mongeau", "Tate McRae",  
-            "Valkyrae", "Whitney Cummings"
+            "Amy Schumer", "Andrea Botez", "Anna Nooshin", "Anne Hathaway", "Ariasaki",
+            "Ariel Winter", "Ashley Graham", "Azzyland", "Barbie Oh Oh Cherso", "Bella Poarch", 
+            "Bhadbhabie", "Billie Eilish", "Bo Beljaars", "Brett Cooper", "Bridget Maasland",
+            "Brie Larson", "Brookeab", "Cassie Lee,peyton Royce", "Chappel Roan", "Charlotte Flair",
+            "Chyna", "Cinna", "Coco Austin", "Colleen Ballinger", "Dafne Keen",
+            "Dana Brook", "Debby Zwiers", "Dee Van Der Zeeuw", "Emilia Clarke", "Emily Ratajkowski",
+            "Emma Wortelboer", "Erin Moriarty", "Fabiola Volkers", "Famke Louise", "Farrah Abraham",
+            "Genieve Fox", "Georgia Hirst", "Goedele Liekens", "Gorgina Verbaan", "Gwen Van Poorten",
+            "Heleen Van Rooyen", "Heyimbee", "Holly Hagan", "Iliza Shlesinger", "Iris Enthoven",
+            "Jaclyn Glenn", "Jade Anna Van Vliet", "Jodi Quarterjade", "Juultje Tieleman", "Kaat",
+            "Kallmekris", "Katerino", "Katheryn Winnick", "Kim Holland", "Kira Kosarin",
+            "Kylie Jenner", "Lana", "Lelepons", "Lieke Klaver", "Lies Zhara",
+            "Liz The Score Esport", "Mandy", "Mandy Praet", "Mariah Carey", "Marieke Elsinga",
+            "Marit Brugman", "Maryse Ouellet", "Melanie Latooy", "Michella Kox", "Miesha Tate",
+            "Miley Cyrus", "Millie Bobby Brown", "Monica Geuze", "Nienke Plas", "Nikki Bella",
+            "Nikkita Lyons", "Nina Warink", "Nochtli Peralta Alvarez", "Noelle Foley", "Olivia Rodrigo",
+            "Onnedi", "Paige,saraya Bevis", "Paige Vanzant", "Pokimane", "Qtcinderlla",
+            "Rhode Kok", "Sabrina Carpenter", "Sarah Silverman", "Shoeonhead", "Sofia Vergara",
+            "Sophia Diamond", "Sophie Milzink", "Sophie Ousri", "Stephanie Mcmahon", "Susujpg",
+            "Tana Mongeau", "Tate Mcrae", "Tatjana Simic", "Valkyrae", "Whitney Cummings",
+            "Yolanthe Cabau", "Zimra Geurtss"
         ]
     },
     
@@ -640,26 +673,28 @@ const categories = {
         name: "WWE",
         icon: "wwe.png",
         names: [
-            "Cassie Lee,Peyton Royce", "Charlotte Flair", "Chyna", "Dana Brook", "Lana", "Mandy", "Maryse Ouellet", "Nikkita Lyons", "Nikki Bella", 
-            "Noelle Foley", "Paige,Saraya Bevis", "Stephanie McMahon"
+            "Cassie Lee,peyton Royce", "Charlotte Flair", "Chyna", "Dana Brook", "Lana", 
+            "Mandy", "Maryse Ouellet", "Nikkita Lyons", "Nikki Bella", 
+            "Noelle Foley", "Paige,saraya Bevis", "Stephanie Mcmahon"
         ]
-             // Add WWE names here
     },
     netherlands: {
         name: "Netherlands",
         icon: "nl.png",
-        names: ["Anna Nooshin","Barbie Oh Oh Cherso","Bo Beljaars","Bridget Maasland",
-            "Debby Zwiers","Dee van der Zeeuw","Emma Wortelboer","Fabiola Volkers",
-            "Famke Louise","Genieve Fox","Goedele Liekens","Gorgina Verbaan","Gwen van Poorten",
-            "Heleen van Rooyen","Iris Enthoven","Jade Anna van Vliet","Juultje Tieleman","Kaat","Kim Holland",
-            "Lieke Klaver","Lies Zhara","Mandy Praet","Marieke Elsinga","Marit Brugman","Melanie Latooy",
-            "Michella Kox","Monica Geuze","Nienke Plas","Nina Warink","Nochtli Peralta Alvarez","Onnedi",
-            "Rhode Kok","Sophie Milzink","Sophie Ousri","Tatjana Simic","Yolanthe Cabau","Zimra Geurtss"
-] // Add Netherlands names here
+        names: [
+            "Anna Nooshin", "Barbie Oh Oh Cherso", "Bo Beljaars", "Bridget Maasland",
+            "Debby Zwiers", "Dee Van Der Zeeuw", "Emma Wortelboer", "Fabiola Volkers",
+            "Famke Louise", "Genieve Fox", "Goedele Liekens", "Gorgina Verbaan", "Gwen Van Poorten",
+            "Heleen Van Rooyen", "Iris Enthoven", "Jade Anna Van Vliet", "Juultje Tieleman", "Kaat", 
+            "Kim Holland", "Lieke Klaver", "Lies Zhara", "Mandy Praet", "Marieke Elsinga", 
+            "Marit Brugman", "Melanie Latooy", "Michella Kox", "Monica Geuze", "Nienke Plas", 
+            "Nina Warink", "Nochtli Peralta Alvarez", "Onnedi", "Rhode Kok", "Sophie Milzink", 
+            "Sophie Ousri", "Tatjana Simic", "Yolanthe Cabau", "Zimra Geurtss"
+        ]
     }
 };
 
-// Gallery Manager
+// Gallery Manager with Lazy Loading
 class GalleryManager {
     constructor() {
         this.slideIndex = 1;
@@ -667,6 +702,8 @@ class GalleryManager {
         this.folderMaxSlides = new Map();
         this.nameMenuVisible = false;
         this.currentCategory = 'celebrities';
+        this.observer = null;
+        this.loadedImages = new Set();
         
         this.modal = document.getElementById('myModal');
         this.modalImg = document.getElementById('modalImg');
@@ -683,6 +720,7 @@ class GalleryManager {
     
     init() {
         this.setupEventListeners();
+        this.initIntersectionObserver();
         this.renderCurrentCategory();
         this.hideNameMenu();
     }
@@ -711,6 +749,84 @@ class GalleryManager {
         
         // Keyboard navigation
         document.addEventListener('keydown', (e) => this.handleKeydown(e));
+        
+        // Scroll event for lazy loading
+        window.addEventListener('scroll', () => this.handleScroll());
+        window.addEventListener('resize', () => this.handleScroll());
+    }
+    
+    initIntersectionObserver() {
+        if ('IntersectionObserver' in window) {
+            this.observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            this.loadImage(img);
+                            this.observer.unobserve(img);
+                        }
+                    });
+                },
+                {
+                    rootMargin: `${LOAD_DISTANCE}px`,
+                    threshold: 0.1
+                }
+            );
+        }
+    }
+    
+    loadImage(imgElement) {
+        if (imgElement.dataset.src && !imgElement.classList.contains('loaded')) {
+            const src = imgElement.dataset.src;
+            
+            // Create a new image to preload
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                imgElement.src = src;
+                imgElement.classList.add('loaded');
+                
+                // Remove placeholder if it exists
+                const placeholder = imgElement.parentNode.querySelector('.thumbnail-placeholder');
+                if (placeholder) {
+                    setTimeout(() => {
+                        placeholder.style.opacity = '0';
+                        setTimeout(() => placeholder.remove(), 300);
+                    }, 100);
+                }
+                
+                this.loadedImages.add(src);
+            };
+            
+            tempImg.onerror = () => {
+                // Handle error - could show a fallback image
+                console.warn(`Failed to load image: ${src}`);
+                imgElement.classList.add('loaded'); // Still mark as loaded to stop trying
+            };
+            
+            tempImg.src = src;
+        }
+    }
+    
+    isInViewport(element) {
+        const rect = element.getBoundingClientRect();
+        return (
+            rect.top <= (window.innerHeight + LOAD_DISTANCE) &&
+            rect.bottom >= -LOAD_DISTANCE &&
+            rect.left <= (window.innerWidth + LOAD_DISTANCE) &&
+            rect.right >= -LOAD_DISTANCE
+        );
+    }
+    
+    handleScroll() {
+        // Fallback for browsers without IntersectionObserver
+        if (!this.observer) {
+            const images = document.querySelectorAll('.thumbnail-image[data-src]');
+            images.forEach(img => {
+                if (this.isInViewport(img) && !img.classList.contains('loaded')) {
+                    this.loadImage(img);
+                }
+            });
+        }
     }
     
     switchCategory(category) {
@@ -730,6 +846,9 @@ class GalleryManager {
         
         // Scroll to top of gallery
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Trigger lazy loading for visible images
+        setTimeout(() => this.handleScroll(), 100);
     }
     
     toggleNameMenu() {
@@ -754,7 +873,8 @@ class GalleryManager {
     }
     
     sanitizeName(name) {
-        return name.replace(/[ /]/g, '_');
+        // Replace spaces, commas, and slashes with underscores
+        return name.replace(/[ ,/]/g, '_');
     }
     
     scrollToThumbnail(sanitizedName) {
@@ -799,14 +919,23 @@ class GalleryManager {
         names.forEach(name => {
             const sanitized = this.sanitizeName(name);
             const randomIndex = Math.floor(Math.random() * IMAGES_PER_PERSON) + 1;
-            const imgSrc = `./img/${sanitized}/${randomIndex}.jpg`;
+            const imgSrc = `${GITHUB_BASE_URL}${sanitized}/${randomIndex}.jpg`;
             
             const galleryItem = document.createElement('div');
             galleryItem.className = 'gallery-item';
             galleryItem.id = `thumb-${sanitized}`;
+            
+            // Check if image is already loaded from cache
+            const isCached = this.loadedImages.has(imgSrc);
+            
             galleryItem.innerHTML = `
                 <div class="thumbnail-container" tabindex="0" role="button" aria-label="View ${name} gallery">
-                    <img src="${imgSrc}" loading="lazy" alt="${name}" class="thumbnail-image">
+                    ${!isCached ? '<div class="thumbnail-placeholder"></div>' : ''}
+                    <img ${isCached ? `src="${imgSrc}"` : `data-src="${imgSrc}"`} 
+                         alt="${name}" 
+                         class="thumbnail-image ${isCached ? 'loaded' : ''}"
+                         ${isCached ? '' : 'loading="lazy"'}
+                         onerror="this.onerror=null; this.style.opacity='0.3'; this.alt='Image not available';">
                     <div class="overlay">
                         <div class="overlay-text">${name}</div>
                     </div>
@@ -825,6 +954,17 @@ class GalleryManager {
                     this.openModal(sanitized, name);
                 }
             });
+            
+            // Set up lazy loading for new image
+            if (!isCached) {
+                const imgElement = galleryItem.querySelector('.thumbnail-image');
+                if (this.observer) {
+                    this.observer.observe(imgElement);
+                } else if (this.isInViewport(imgElement)) {
+                    // Load immediately if already in viewport
+                    this.loadImage(imgElement);
+                }
+            }
         });
     }
     
@@ -833,7 +973,7 @@ class GalleryManager {
             const img = new Image();
             img.onload = () => resolve(true);
             img.onerror = () => resolve(false);
-            img.src = `./img/${folder}/${index}.jpg`;
+            img.src = `${GITHUB_BASE_URL}${folder}/${index}.jpg`;
         });
     }
     
@@ -881,10 +1021,22 @@ class GalleryManager {
         const maxSlides = await this.getMaxSlides(this.currentFolder);
         this.slideIndex = ((n - 1 + maxSlides) % maxSlides) + 1;
         
-        const imgSrc = `./img/${this.currentFolder}/${this.slideIndex}.jpg`;
-        this.modalImg.src = imgSrc;
-        this.modalImg.alt = `Image ${this.slideIndex} of ${maxSlides}`;
-        this.numberText.innerHTML = `${this.slideIndex} / ${maxSlides}`;
+        const imgSrc = `${GITHUB_BASE_URL}${this.currentFolder}/${this.slideIndex}.jpg`;
+        
+        // Preload modal image for smoother transitions
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            this.modalImg.src = imgSrc;
+            this.modalImg.alt = `Image ${this.slideIndex} of ${maxSlides}`;
+            this.numberText.innerHTML = `${this.slideIndex} / ${maxSlides}`;
+        };
+        
+        tempImg.onerror = () => {
+            this.modalImg.alt = `Image ${this.slideIndex} of ${maxSlides} - Failed to load`;
+            this.numberText.innerHTML = `${this.slideIndex} / ${maxSlides}`;
+        };
+        
+        tempImg.src = imgSrc;
         
         this.updateNavButtons(maxSlides);
     }
@@ -926,7 +1078,10 @@ class GalleryManager {
 
 // Initialize the gallery when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new GalleryManager();
+    const gallery = new GalleryManager();
+    
+    // Expose gallery instance for debugging if needed
+    window.gallery = gallery;
 });
 </script>
 </body>
