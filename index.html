@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Photo Gallery with Pop-out Name Menu</title>
+    <title>Photo Gallery with Category Tabs</title>
     <style>
         :root {
             --primary-color: #663333;
@@ -11,7 +11,9 @@
             --light-color: #f8f8f8;
             --dark-color: #333;
             --transition-speed: 0.3s;
-            --header-height: 80px;
+            --grid-gap: 5px;
+            --tab-height: 80px;
+            --icon-size: 60px;
         }
         
         * {
@@ -25,22 +27,24 @@
             background-color: #1a1a1a;
             color: #eee;
             line-height: 1.6;
+            overflow-x: hidden;
         }
         
-        /* Fixed Name Grid Header - Initially Hidden */
+        /* Name Grid Header - Initially Hidden */
         .name-grid-header {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(30, 30, 30, 0.95);
+            background: rgba(30, 30, 30, 0.98);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             z-index: 1000;
             padding: 15px 0;
             backdrop-filter: blur(10px);
             border-bottom: 1px solid #444;
-            transition: transform var(--transition-speed) ease;
             transform: translateY(-100%);
+            transition: transform var(--transition-speed) ease;
+            will-change: transform;
         }
         
         .name-grid-header.visible {
@@ -51,8 +55,8 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px;
-            max-width: 1200px;
+            gap: var(--grid-gap);
+            max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -75,12 +79,12 @@
         .name-item:focus {
             background: linear-gradient(135deg, var(--primary-color), #552222);
             color: white;
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 51, 51, 0.4);
             outline: none;
         }
         
-        /* Toggle Button for Name Menu */
+        /* Toggle Button */
         .toggle-menu-btn {
             position: fixed;
             top: 20px;
@@ -106,37 +110,108 @@
             box-shadow: 0 6px 15px rgba(102, 51, 51, 0.5);
         }
         
+        /* Tabs Navigation */
+        .tabs-container {
+            margin-top: 20px;
+            padding: 0 20px;
+            max-width: 1900px;
+            margin: 0 auto 30px;
+        }
+        
+        .tabs-nav {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: var(--tab-height);
+            background: linear-gradient(145deg, #2a2a2a, #222);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            border: 2px solid #444;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary-light);
+        }
+        
+        .tab.active {
+            background: linear-gradient(145deg, var(--primary-color), #552222);
+            border-color: var(--primary-light);
+            box-shadow: 0 8px 20px rgba(102, 51, 51, 0.4);
+        }
+        
+        .tab-icon {
+            width: var(--icon-size);
+            height: var(--icon-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.2);
+            transition: transform var(--transition-speed) ease;
+        }
+        
+        .tab.active .tab-icon {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .tab-icon img {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+        }
+        
+        .tab.active .tab-icon img {
+        }
+        
+        .tab-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ddd;
+            letter-spacing: 0.5px;
+        }
+        
+        .tab.active .tab-text {
+            color: white;
+            font-weight: 700;
+        }
+        
         /* Gallery Container */
         .gallery-container {
-            margin-top: 20px;
-            padding: 20px;
-            max-width: 1800px;
-            margin-left: auto;
-            margin-right: auto;
+            padding: 0 20px;
+            max-width: 1900px;
+            margin: 0 auto;
         }
         
-        .gallery-title {
-            text-align: center;
-            color: #eee;
-            margin-bottom: 40px;
-            font-size: 2.5rem;
-            font-weight: 300;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        
-        /* Gallery Grid with Smaller Thumbnails - 5 per row */
+        /* Gallery Grid - Fixed to show 5 columns */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
+            gap: var(--grid-gap);
+            padding: 10px;
         }
         
-        /* Gallery Item - Smaller Thumbnails */
+        /* Gallery Item */
         .gallery-item {
             background: linear-gradient(145deg, #2a2a2a, #222);
             text-align: center;
-            transition: all var(--transition-speed) ease;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
@@ -150,55 +225,55 @@
             border-color: var(--primary-light);
         }
         
-        /* Thumbnail Container - Smaller */
+        /* Thumbnail Container */
         .thumbnail-container {
             position: relative;
             width: 100%;
-            height: 350px;
+            aspect-ratio: 3/4;
             cursor: pointer;
             overflow: hidden;
+            background: #1a1a1a;
         }
         
-        /* Smaller Thumbnail Image */
         .thumbnail-image {
             display: block;
             width: 100%;
             height: 100%;
             object-fit: cover;
             object-position: center;
-            transition: all var(--transition-speed) ease;
+            transition: transform var(--transition-speed) ease;
+            will-change: transform;
         }
         
         .thumbnail-container:hover .thumbnail-image {
-            transform: scale(1.10);
+            transform: scale(1.08);
         }
         
-        /* Overlay for Hover Name */
+        /* Overlay */
         .overlay {
             position: absolute;
             top: 0;
-            bottom: 0;
             left: 0;
-            right: 0;
-            height: 100%;
             width: 100%;
+            height: 100%;
             opacity: 0;
-            transition: .5s ease;
+            transition: opacity var(--transition-speed) ease;
             background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.8) 100%);
             display: flex;
             align-items: flex-end;
             justify-content: center;
             padding-bottom: 20px;
+            pointer-events: none;
         }
         
         .thumbnail-container:hover .overlay {
             opacity: 1;
         }
         
-        /* Hover Text (Name) */
+        /* Hover Text */
         .overlay-text {
             color: white;
-            font-size: 18px;
+            font-size: clamp(14px, 2vw, 18px);
             text-align: center;
             font-weight: 600;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
@@ -206,26 +281,26 @@
             letter-spacing: 0.5px;
         }
         
-        /* Name Label at Bottom */
+        /* Name Label */
         .name-label {
             padding: 12px;
-            background: rgba(40, 40, 40, 0.9);
+            background: rgba(40, 40, 40, 0.95);
             border-top: 1px solid #444;
             font-weight: 500;
             color: #ddd;
-            transition: all var(--transition-speed) ease;
-            font-size: 14px;
+            font-size: clamp(12px, 1.5vw, 14px);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            transition: background-color var(--transition-speed) ease;
         }
         
         .gallery-item:hover .name-label {
-            background: rgba(60, 60, 60, 0.9);
+            background: rgba(60, 60, 60, 0.95);
             color: white;
         }
         
-        /* The Modal (background) */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -234,9 +309,9 @@
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.95);
+            background-color: rgba(0, 0, 0, 0.97);
             animation: fadeIn 0.3s ease;
+            overflow: hidden;
         }
         
         @keyframes fadeIn {
@@ -246,17 +321,13 @@
         
         /* Modal Content */
         .modal-content {
-            position: relative;
-            margin: auto;
-            padding: 0;
             width: 100%;
-            height: 100vh;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        /* Image wrapper */
         .image-wrapper {
             position: relative;
             display: flex;
@@ -281,20 +352,17 @@
             padding: 8px 15px;
             border-radius: 50%;
             cursor: pointer;
-            transition: var(--transition-speed);
+            transition: all var(--transition-speed) ease;
             line-height: 1;
         }
         
-        .close:hover,
-        .close:focus {
-            color: #ccc;
-            background-color: rgba(0, 0, 0, 0.7);
+        .close:hover {
+            background-color: rgba(0, 0, 0, 0.8);
             transform: scale(1.1);
         }
         
-        /* Prev/Next Buttons */
-        .prev,
-        .next {
+        /* Navigation Buttons */
+        .nav-btn {
             cursor: pointer;
             position: fixed;
             top: 50%;
@@ -305,16 +373,20 @@
             color: white;
             font-weight: bold;
             font-size: 24px;
-            transition: 0.4s ease;
+            transition: all var(--transition-speed) ease;
             border-radius: 50%;
-            user-select: none;
-            -webkit-user-select: none;
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 2001;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            user-select: none;
+        }
+        
+        .nav-btn:hover {
+            background-color: rgba(102, 51, 51, 0.8);
+            transform: scale(1.1);
         }
         
         .next {
@@ -323,12 +395,6 @@
         
         .prev {
             left: 30px;
-        }
-        
-        .prev:hover,
-        .next:hover {
-            background-color: rgba(102, 51, 51, 0.8);
-            transform: scale(1.1);
         }
         
         /* Number Text */
@@ -357,24 +423,21 @@
             transform: translateX(-50%);
             border-radius: 10px;
             z-index: 2001;
-            max-width: 80%;
-            font-size: 18px;
+            max-width: min(80%, 600px);
+            font-size: clamp(14px, 2vw, 18px);
             backdrop-filter: blur(5px);
         }
         
         /* Modal Image */
         #modalImg {
-            max-width: 100vw;
-            max-height: 100vh;
-            width: auto;
-            height: auto;
+            max-width: 100%;
+            max-height: 100%;
             object-fit: contain;
-            display: block;
             border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
         
-        /* Loading indicator */
+        /* Loading */
         .loading {
             display: inline-block;
             width: 20px;
@@ -390,47 +453,53 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Responsive adjustments */
+        /* Responsive */
         @media screen and (max-width: 1600px) {
             .gallery-grid {
                 grid-template-columns: repeat(4, 1fr);
             }
-            
-            .thumbnail-container {
-                height: 350px;
-            }
         }
         
-        @media screen and (max-width: 900px) {
+        @media screen and (max-width: 1200px) {
             .gallery-grid {
                 grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
-            }
-            
-            .thumbnail-container {
-                height: 220px;
-            }
-            
-            .overlay-text {
-                font-size: 16px;
-            }
-            
-            .gallery-title {
-                font-size: 2rem;
             }
         }
         
         @media screen and (max-width: 768px) {
+            .tabs-nav {
+                gap: 15px;
+            }
+            
+            .tab {
+                width: 100px;
+                height: 70px;
+            }
+            
+            .tab-icon {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .tab-text {
+                font-size: 12px;
+            }
+            
             .gallery-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
             
-            .thumbnail-container {
-                height: 200px;
+            .name-item {
+                font-size: 12px;
+                padding: 6px 12px;
             }
             
-            .overlay-text {
-                font-size: 14px;
+            .toggle-menu-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                top: 15px;
+                left: 15px;
             }
             
             .close {
@@ -439,7 +508,7 @@
                 right: 20px;
             }
             
-            .prev, .next {
+            .nav-btn {
                 width: 50px;
                 height: 50px;
                 padding: 12px;
@@ -453,309 +522,412 @@
             .next {
                 right: 15px;
             }
-            
-            .gallery-container {
-                margin-top: 20px;
-            }
-            
-            .name-item {
-                font-size: 12px;
-                padding: 6px 12px;
-            }
-            
-            .toggle-menu-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 16px;
-                top: 15px;
-                left: 15px;
-            }
         }
         
         @media screen and (max-width: 480px) {
-            .gallery-grid {
-                grid-template-columns: 1fr;
+            .tabs-nav {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
             }
             
-            .thumbnail-container {
-                height: 250px;
+            .tab {
+                width: 90%;
+                height: 60px;
+                flex-direction: row;
+                justify-content: flex-start;
+                padding: 0 20px;
+            }
+            
+            .tab-icon {
+                width: 40px;
+                height: 40px;
+                margin-bottom: 0;
+                margin-right: 15px;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: 1fr;
             }
             
             .name-grid {
                 gap: 6px;
             }
-            
-            .gallery-title {
-                font-size: 1.8rem;
-            }
         }
     </style>
 </head>
 <body>
-
-    <!-- Toggle Button for Name Menu -->
+    <!-- Toggle Button - Menu starts closed -->
     <button class="toggle-menu-btn" id="toggleMenuBtn" aria-label="Show name menu">☰</button>
     
-    <!-- Fixed Name Grid Header - Initially Hidden -->
+    <!-- Name Grid Header - Initially Hidden -->
     <header class="name-grid-header" id="nameGridHeader">
-        <div class="name-grid" id="nameGrid">
-            <!-- Name links will be dynamically inserted here -->
-        </div>
+        <div class="name-grid" id="nameGrid"></div>
     </header>
     
-    <div class="gallery-container">
-        <h1 class="gallery-title">Modern Photo Gallery</h1>
-        
-        <div class="gallery-grid" id="galleryGrid">
-            <!-- Thumbnails will be dynamically inserted here -->
+    <!-- Tabs Navigation -->
+    <div class="tabs-container">
+        <div class="tabs-nav">
+            <div class="tab active" data-category="celebrities">
+                <div class="tab-icon">
+                    <img src="monde.png" alt="Celebrities Icon">
+                </div>
+                <div class="tab-text">Celebs</div>
+            </div>
+            <div class="tab" data-category="wwe">
+                <div class="tab-icon">
+                    <img src="wwe-seeklogo.png" alt="WWE Icon">
+                </div>
+                <div class="tab-text">WWE</div>
+            </div>
+            <div class="tab" data-category="netherlands">
+                <div class="tab-icon">
+                    <img src="nl.png" alt="Netherlands Icon">
+                </div>
+                <div class="tab-text">Netherlands</div>
+            </div>
         </div>
     </div>
     
-    <!-- The Modal -->
-    <div id="myModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-describedby="modalDescription">
+    <!-- Main Content -->
+    <div class="gallery-container">
+        <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="myModal" class="modal">
         <span class="close" tabindex="0" aria-label="Close modal">&times;</span>
         <div class="modal-content">
             <div class="image-wrapper">
                 <div id="number" class="numbertext"></div>
                 <img id="modalImg" alt="">
-                <a class="prev" onclick="plusSlides(-1)" tabindex="0" aria-label="Previous image">&#10094;</a>
-                <a class="next" onclick="plusSlides(1)" tabindex="0" aria-label="Next image">&#10095;</a>
+                <a class="nav-btn prev" tabindex="0" aria-label="Previous image">&#10094;</a>
+                <a class="nav-btn next" tabindex="0" aria-label="Next image">&#10095;</a>
             </div>
             <div id="caption" class="caption-container"></div>
         </div>
     </div>
 
-    <script>
-// List of names - FIXED VERSION
-const names = [
-    "Abby Boom", "Abelina Sabrina", "Alanah Pearce", "Alexandra Daddario", "Alinty", "Amy Schumer",
-    "Andrea Botez", "Anne Hathaway", "AriaSaki", "Ariel Winter", "Ashley Graham", "Azzyland",
-    "Bella Poarch", "Bhadbhabie", "Billie Eilish", "Brett Cooper", "Brie Larson", "Brookeab",
-    "Chappel roan", "Cinna", "Coco Austin", "Colleen Ballinger", "Dafne Keen",
-    "Emilia Clarke", "Emily Ratajkowski", "Erin Moriarty", "Farrah Abraham", "Georgia Hirst",
-    "Heyimbee", "Holly Hagan", "Iliza Shlesinger", "Jaclyn Glenn", "Jodi/QuarterJade",
-    "Kallmekris", "Katheryn Winnick", "Kira Kosarin", "Kylie Jenner", "Lelepons", "Liz The Score Esport",
-    "Mariah Carey", "Miesha Tate", "Miley Cyrus", "Millie Bobby Brown", "Olivia Rodrigo", "Paige VanZant", "Pokimane", "Qtcinderlla",
-    "Sarah Silverman", "ShoeOnhead", "sabrina carpenter", "Sofia Vergara", "Sophia Diamond", "Susujpg", "Tana Mongeau", "Valkyrae", "Whitney Cummings",
-];
-        
-        // Global variables
-        let slideIndex = 1;
-        let currentFolder = '';
-        let folderMaxSlides = {};
-        const MAX_IMAGES_TO_CHECK = 20;
-        let nameMenuVisible = true; // Start with menu closed
-        
-        // getMaxSlides function
-        async function getMaxSlides(folder) {
-            let max = 0;
-            for (let i = 1; i <= MAX_IMAGES_TO_CHECK; i++) {
-                const img = new Image();
-                const promise = new Promise((resolve) => {
-                    img.onload = () => {
-                        max = i;
-                        resolve(true);
-                    };
-                    img.onerror = () => {
-                        resolve(false);
-                    };
-                    img.src = `./img/${folder}/${i}.jpg`;
-                });
-                const exists = await promise;
-                if (!exists) {
-                    break;
-                }
-            }
-            return Math.max(max, 1);
-        }
-        
-        // Function to toggle name menu visibility
-        function toggleNameMenu() {
-            const nameGridHeader = document.getElementById('nameGridHeader');
-            const toggleBtn = document.getElementById('toggleMenuBtn');
-            
-            if (nameMenuVisible) {
-                nameGridHeader.classList.remove('visible');
-                toggleBtn.textContent = '☰';
-                toggleBtn.setAttribute('aria-label', 'Show name menu');
-            } else {
-                nameGridHeader.classList.add('visible');
-                toggleBtn.textContent = '✕';
-                toggleBtn.setAttribute('aria-label', 'Hide name menu');
-            }
-            
-            nameMenuVisible = !nameMenuVisible;
-        }
-        
-        // Function to scroll to a specific thumbnail
-        function scrollToThumbnail(sanitizedName) {
-            const element = document.getElementById(`thumb-${sanitizedName}`);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                // Add highlight effect
-                element.style.boxShadow = '0 0 0 3px #663333, 0 10px 25px rgba(102, 51, 51, 0.5)';
-                setTimeout(() => {
-                    element.style.boxShadow = '';
-                }, 2000);
-            }
-        }
-        
-        // Dynamically generate name grid and thumbnails
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Generate name grid
-            const nameGrid = document.getElementById('nameGrid');
-            for (const name of names) {
-                const sanitized = name.replace(/[ /]/g, '_');
-                const nameItem = document.createElement('a');
-                nameItem.className = 'name-item';
-                nameItem.href = `#${sanitized}`;
-                nameItem.textContent = name;
-                nameItem.setAttribute('tabindex', '0');
-                nameItem.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    scrollToThumbnail(sanitized);
-                });
-                nameItem.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        scrollToThumbnail(sanitized);
-                    }
-                });
-                nameGrid.appendChild(nameItem);
-            }
-            
-            // Generate thumbnails
-            const galleryGrid = document.getElementById('galleryGrid');
-            for (const name of names) {
-                const sanitized = name.replace(/[ /]/g, '_');
+<script>
+// Constants
+const MAX_IMAGES_TO_CHECK = 20;
+const IMAGES_PER_PERSON = 3;
 
-                // Pick a random image between 1 and 3
-                const randomIndex = Math.floor(Math.random() * 3) + 1;
-                const imgSrc = `./img/${sanitized}/${randomIndex}.jpg`;
+// Data by category
+const categories = {
+    celebrities: {
+        name: "Celebs",
+        icon: "monde.png",
+        names: [
+            "Abby Boom", "Abelina Sabrina", "Alanah Pearce", "Alexandra Daddario", "Alinty", 
+            "Amy Schumer", "Andrea Botez", "Anne Hathaway", "AriaSaki", "Ariel Winter", 
+            "Ashley Graham", "Azzyland", "Bella Poarch", "Bhadbhabie", "Billie Eilish", 
+            "Brett Cooper", "Brie Larson", "Brookeab", "Chappel roan", "Cinna", 
+            "Coco Austin", "Colleen Ballinger", "Dafne Keen", "Emilia Clarke", 
+            "Emily Ratajkowski", "Erin Moriarty", "Farrah Abraham", "Georgia Hirst", 
+            "Heyimbee", "Holly Hagan", "Iliza Shlesinger", "Jaclyn Glenn", 
+            "Jodi/QuarterJade", "Kallmekris", "Katerino", "Katheryn Winnick", 
+            "Kira Kosarin", "Kylie Jenner", "Lelepons", "Liz The Score Esport", 
+            "Mariah Carey", "Miesha Tate", "Miley Cyrus", "Millie Bobby Brown", 
+            "Olivia Rodrigo", "Paige VanZant", "Pokimane", "Qtcinderlla", 
+            "Sabrina Carpenter", "Sarah Silverman", "ShoeOnhead", "Sofia Vergara", 
+            "Sophia Diamond", "Susujpg", "Tana Mongeau", "Tate McRae",  
+            "Valkyrae", "Whitney Cummings"
+        ]
+    },
+    
+    wwe: {
+        name: "WWE",
+        icon: "wwe.png",
+        names: [
+            "Cassie Lee,Peyton Royce", "Charlotte Flair", "Chyna", "Dana Brook", "Lana", "Mandy", "Maryse Ouellet", "Nikkita Lyons", "Nikki Bella", 
+            "Noelle Foley", "Paige,Saraya Bevis", "Stephanie McMahon"
+        ]
+             // Add WWE names here
+    },
+    netherlands: {
+        name: "Netherlands",
+        icon: "nl.png",
+        names: ["Anna Nooshin","Barbie Oh Oh Cherso","Bo Beljaars","Bridget Maasland",
+            "Debby Zwiers","Dee van der Zeeuw","Emma Wortelboer","Fabiola Volkers",
+            "Famke Louise","Genieve Fox","Goedele Liekens","Gorgina Verbaan","Gwen van Poorten",
+            "Heleen van Rooyen","Iris Enthoven","Jade Anna van Vliet","Juultje Tieleman","Kaat","Kim Holland",
+            "Lieke Klaver","Lies Zhara","Mandy Praet","Marieke Elsinga","Marit Brugman","Melanie Latooy",
+            "Michella Kox","Monica Geuze","Nienke Plas","Nina Warink","Nochtli Peralta Alvarez","Onnedi",
+            "Rhode Kok","Sophie Milzink","Sophie Ousri","Tatjana Simic","Yolanthe Cabau","Zimra Geurtss"
+] // Add Netherlands names here
+    }
+};
 
-                const galleryItem = document.createElement('div');
-                galleryItem.className = 'gallery-item';
-                galleryItem.id = `thumb-${sanitized}`;
-                galleryItem.innerHTML = `
-                    <div class="thumbnail-container" tabindex="0" role="button" aria-label="View ${name} gallery">
-                        <img src="${imgSrc}" loading="lazy" alt="${name}" class="thumbnail-image">
-                        <div class="overlay">
-                            <div class="overlay-text">${name}</div>
-                        </div>
-                    </div>
-                    <div class="name-label">${name}</div>
-                `;
-                galleryGrid.appendChild(galleryItem);
-
-                // Attach click listener to container
-                const container = galleryItem.querySelector('.thumbnail-container');
-                container.addEventListener('click', () => openModalFor(sanitized, name));
-                container.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        openModalFor(sanitized, name);
-                    }
-                });
-            }
-            
-            // Add event listener for toggle button
-            document.getElementById('toggleMenuBtn').addEventListener('click', toggleNameMenu);
-            
-            // Initialize with menu closed
-            toggleNameMenu();
+// Gallery Manager
+class GalleryManager {
+    constructor() {
+        this.slideIndex = 1;
+        this.currentFolder = '';
+        this.folderMaxSlides = new Map();
+        this.nameMenuVisible = false;
+        this.currentCategory = 'celebrities';
+        
+        this.modal = document.getElementById('myModal');
+        this.modalImg = document.getElementById('modalImg');
+        this.numberText = document.getElementById('number');
+        this.caption = document.getElementById('caption');
+        this.toggleMenuBtn = document.getElementById('toggleMenuBtn');
+        this.nameGridHeader = document.getElementById('nameGridHeader');
+        this.prevBtn = document.querySelector('.prev');
+        this.nextBtn = document.querySelector('.next');
+        this.tabs = document.querySelectorAll('.tab');
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupEventListeners();
+        this.renderCurrentCategory();
+        this.hideNameMenu();
+    }
+    
+    setupEventListeners() {
+        // Toggle menu button
+        this.toggleMenuBtn.addEventListener('click', () => this.toggleNameMenu());
+        
+        // Tab clicks
+        this.tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const category = tab.dataset.category;
+                this.switchCategory(category);
+            });
         });
         
-        // openModalFor
-        async function openModalFor(folder, originalName) {
-            currentFolder = folder;
-            slideIndex = 1;
-            const modal = document.getElementById("myModal");
-            modal.style.display = "block";
-            document.getElementById('caption').innerHTML = '<span class="loading"></span>Loading gallery...';
-            
-            if (!folderMaxSlides[folder]) {
-                const max = await getMaxSlides(folder);
-                folderMaxSlides[folder] = max;
-            }
-            
-            document.getElementById('caption').innerHTML = `Gallery: ${originalName}`;
-            showSlide(1);
-        }
+        // Modal controls
+        document.querySelector('.close').addEventListener('click', () => this.closeModal());
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) this.closeModal();
+        });
         
-        // closeModal
-        function closeModal() {
-            document.getElementById("myModal").style.display = "none";
-        }
+        // Navigation buttons
+        this.prevBtn.addEventListener('click', () => this.prevSlide());
+        this.nextBtn.addEventListener('click', () => this.nextSlide());
         
-        // showSlide
-        function showSlide(n) {
-            const max = folderMaxSlides[currentFolder] || 1;
-            if (n > max) n = 1;
-            if (n < 1) n = max;
-            slideIndex = n;
-            const img = document.getElementById('modalImg');
-            img.src = `./img/${currentFolder}/${n}.jpg`;
-            img.alt = `Image ${n} of ${max} for ${currentFolder}`;
-            document.getElementById('number').innerHTML = `${n} / ${max}`;
-            const prevBtn = document.querySelector('.prev');
-            const nextBtn = document.querySelector('.next');
-            if (max === 1) {
-                prevBtn.style.display = 'none';
-                nextBtn.style.display = 'none';
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => this.handleKeydown(e));
+    }
+    
+    switchCategory(category) {
+        if (this.currentCategory === category) return;
+        
+        // Update active tab
+        this.tabs.forEach(tab => {
+            if (tab.dataset.category === category) {
+                tab.classList.add('active');
             } else {
-                prevBtn.style.display = 'block';
-                nextBtn.style.display = 'block';
+                tab.classList.remove('active');
             }
-        }
+        });
         
-        // plusSlides
-        function plusSlides(n) {
-            showSlide(slideIndex + n);
-        }
+        this.currentCategory = category;
+        this.renderCurrentCategory();
         
-        // Keyboard navigation for modal
-        function handleKeyDown(e) {
-            if (document.getElementById("myModal").style.display === "block") {
-                switch(e.key) {
-                    case 'Escape':
-                        closeModal();
-                        break;
-                    case 'ArrowLeft':
-                        plusSlides(-1);
-                        break;
-                    case 'ArrowRight':
-                        plusSlides(1);
-                        break;
-                }
-            }
-        }
+        // Scroll to top of gallery
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    toggleNameMenu() {
+        this.nameMenuVisible = !this.nameMenuVisible;
         
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById("myModal");
-            const span = document.getElementsByClassName("close")[0];
+        if (this.nameMenuVisible) {
+            this.nameGridHeader.classList.add('visible');
+            this.toggleMenuBtn.textContent = '✕';
+            this.toggleMenuBtn.setAttribute('aria-label', 'Hide name menu');
+        } else {
+            this.nameGridHeader.classList.remove('visible');
+            this.toggleMenuBtn.textContent = '☰';
+            this.toggleMenuBtn.setAttribute('aria-label', 'Show name menu');
+        }
+    }
+    
+    hideNameMenu() {
+        this.nameMenuVisible = false;
+        this.nameGridHeader.classList.remove('visible');
+        this.toggleMenuBtn.textContent = '☰';
+        this.toggleMenuBtn.setAttribute('aria-label', 'Show name menu');
+    }
+    
+    sanitizeName(name) {
+        return name.replace(/[ /]/g, '_');
+    }
+    
+    scrollToThumbnail(sanitizedName) {
+        const element = document.getElementById(`thumb-${sanitizedName}`);
+        if (!element) return;
+        
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Highlight effect
+        element.style.boxShadow = '0 0 0 3px var(--primary-color), 0 10px 25px rgba(102, 51, 51, 0.5)';
+        setTimeout(() => element.style.boxShadow = '', 2000);
+    }
+    
+    renderCurrentCategory() {
+        const category = categories[this.currentCategory];
+        const names = category.names;
+        
+        // Update name grid
+        const nameGrid = document.getElementById('nameGrid');
+        nameGrid.innerHTML = '';
+        
+        names.forEach(name => {
+            const sanitized = this.sanitizeName(name);
+            const nameItem = document.createElement('a');
+            nameItem.className = 'name-item';
+            nameItem.href = `#${sanitized}`;
+            nameItem.textContent = name;
+            nameItem.setAttribute('tabindex', '0');
             
-            span.onclick = function() {
-                closeModal();
-            };
-            
-            span.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    closeModal();
-                }
+            nameItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.scrollToThumbnail(sanitized);
             });
             
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    closeModal();
-                }
-            };
-            
-            // Add keyboard event listener
-            document.addEventListener('keydown', handleKeyDown);
+            nameGrid.appendChild(nameItem);
         });
-    </script>
+        
+        // Update gallery
+        const galleryGrid = document.getElementById('galleryGrid');
+        galleryGrid.innerHTML = '';
+        
+        names.forEach(name => {
+            const sanitized = this.sanitizeName(name);
+            const randomIndex = Math.floor(Math.random() * IMAGES_PER_PERSON) + 1;
+            const imgSrc = `./img/${sanitized}/${randomIndex}.jpg`;
+            
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item';
+            galleryItem.id = `thumb-${sanitized}`;
+            galleryItem.innerHTML = `
+                <div class="thumbnail-container" tabindex="0" role="button" aria-label="View ${name} gallery">
+                    <img src="${imgSrc}" loading="lazy" alt="${name}" class="thumbnail-image">
+                    <div class="overlay">
+                        <div class="overlay-text">${name}</div>
+                    </div>
+                </div>
+                <div class="name-label">${name}</div>
+            `;
+            
+            galleryGrid.appendChild(galleryItem);
+            
+            // Add click handler to thumbnail
+            const container = galleryItem.querySelector('.thumbnail-container');
+            container.addEventListener('click', () => this.openModal(sanitized, name));
+            container.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.openModal(sanitized, name);
+                }
+            });
+        });
+    }
+    
+    async checkImageExists(folder, index) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = `./img/${folder}/${index}.jpg`;
+        });
+    }
+    
+    async getMaxSlides(folder) {
+        if (this.folderMaxSlides.has(folder)) {
+            return this.folderMaxSlides.get(folder);
+        }
+        
+        let max = 0;
+        const checks = [];
+        
+        for (let i = 1; i <= MAX_IMAGES_TO_CHECK; i++) {
+            checks.push(this.checkImageExists(folder, i));
+        }
+        
+        const results = await Promise.all(checks);
+        max = results.lastIndexOf(true) + 1;
+        
+        this.folderMaxSlides.set(folder, Math.max(max, 1));
+        return this.folderMaxSlides.get(folder);
+    }
+    
+    async openModal(folder, originalName) {
+        this.slideIndex = 1;
+        this.currentFolder = folder;
+        
+        this.modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        this.caption.innerHTML = '<span class="loading"></span>Loading gallery...';
+        
+        const maxSlides = await this.getMaxSlides(folder);
+        this.caption.innerHTML = `Gallery: ${originalName}`;
+        
+        this.showSlide(1);
+    }
+    
+    closeModal() {
+        this.modal.style.display = 'none';
+        document.body.style.overflow = '';
+        this.modalImg.src = '';
+    }
+    
+    async showSlide(n) {
+        const maxSlides = await this.getMaxSlides(this.currentFolder);
+        this.slideIndex = ((n - 1 + maxSlides) % maxSlides) + 1;
+        
+        const imgSrc = `./img/${this.currentFolder}/${this.slideIndex}.jpg`;
+        this.modalImg.src = imgSrc;
+        this.modalImg.alt = `Image ${this.slideIndex} of ${maxSlides}`;
+        this.numberText.innerHTML = `${this.slideIndex} / ${maxSlides}`;
+        
+        this.updateNavButtons(maxSlides);
+    }
+    
+    updateNavButtons(maxSlides) {
+        if (maxSlides === 1) {
+            this.prevBtn.style.display = 'none';
+            this.nextBtn.style.display = 'none';
+        } else {
+            this.prevBtn.style.display = 'flex';
+            this.nextBtn.style.display = 'flex';
+        }
+    }
+    
+    nextSlide() {
+        this.showSlide(this.slideIndex + 1);
+    }
+    
+    prevSlide() {
+        this.showSlide(this.slideIndex - 1);
+    }
+    
+    handleKeydown(e) {
+        if (this.modal.style.display !== 'block') return;
+        
+        switch(e.key) {
+            case 'Escape':
+                this.closeModal();
+                break;
+            case 'ArrowLeft':
+                this.prevSlide();
+                break;
+            case 'ArrowRight':
+                this.nextSlide();
+                break;
+        }
+    }
+}
 
+// Initialize the gallery when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new GalleryManager();
+});
+</script>
 </body>
 </html>
